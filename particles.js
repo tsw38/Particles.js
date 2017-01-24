@@ -1,8 +1,5 @@
 var Particles = {
   CANVAS_HEIGHT: function() {
-    if(Particles.isMobile()){
-      return window.innerHeight;
-    }
     return window.innerHeight;
   },
   CANVAS_WIDTH: function() {
@@ -24,7 +21,7 @@ var Particles = {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   },
   getRandomSize: function() {
-    return Particles.getRandom(1, 20);
+    return (Particles.isMobile()) ? Particles.getRandom(1, 3) : Particles.getRandom(1, 3);
   },
   getRandomOpacity: function() {
     var opacity;
@@ -55,9 +52,18 @@ var Particles = {
     return color;
   },
   getRandomLife: function() {
-    var duration = Math.floor(Particles.getRandom(0, 750)); //random "time between 2 and 10 seconds"
-    var middle = Particles.getRandom(50, 70);
-    var birth = Particles.getRandom(0, middle / 2);
+    var duration,middle,birth;
+
+    duration = (Particles.isMobile()) ? Math.floor(Particles.getRandom(1000, 2000)) : Math.floor(Particles.getRandom(0, 750)); //random "time"
+
+    if(Particles.isMobile()){
+      duration += 60;
+      middle = Particles.getRandom(50, 80) + 60;
+      birth = Particles.getRandom(0, middle)+120;
+    } else {
+      middle = Particles.getRandom(50, 80);
+      birth = Particles.getRandom(0, middle / 2.2);
+    }
 
     middle /= 100;
     birth /= 100;
@@ -71,7 +77,6 @@ var Particles = {
     };
   },
   createParticle: function(x, y, color, size) {
-    //make the circle
     Particles.ctx().fillStyle = color;
     Particles.ctx().beginPath();
     Particles.ctx().arc(x, y, size, 0, Math.PI * 2, true);
@@ -172,10 +177,10 @@ var Particles = {
     return check;
   },
   init: function() {
-    (Particles.isMobile()) ? Particles.createScene(2000) : Particles.createScene(4000);
+    (Particles.isMobile()) ? Particles.createScene(4000) : Particles.createScene(7500);
     Particles._canvas().height = Particles.CANVAS_HEIGHT();
     Particles._canvas().width = Particles.CANVAS_WIDTH();
-    setInterval(Particles.animateParticles, 1);
+    (Particles.isMobile()) ? setInterval(Particles.animateParticles, 60) : setInterval(Particles.animateParticles, 1);
   }
 };
 
