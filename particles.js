@@ -6,7 +6,7 @@ var Particles = {
     return window.innerWidth;
   },
   FPM: function() {
-    return 500;
+    return 625;
   },
   ParticlesArray: [],
   sceneAge: 0,
@@ -17,15 +17,23 @@ var Particles = {
   ctx: function() {
     return Particles._canvas().getContext('2d');
   },
-  getRandom: function(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+  getRandom: function(min, max, isFloat) {
+    if(isFloat){
+      return (Math.random() * (max - min) + min);
+    }
+    return Math.round(Math.random() * (max - min)) + min;
   },
   getRandomSize: function() {
-    return (Particles.isMobile()) ? Particles.getRandom(1, 3) : (Math.random() * (5 - 0.5) + 0.5);
+    if(Particles.isMobile()){
+      return Particles.getRandom(0, 2, true);
+    } else {
+      // console.log(Particles.getRandom(0,1,true));
+      return (Particles.getRandom(0,1,true) >= 0.95) ? 3 : Particles.getRandom(0.5, 2, true);
+    }
   },
   getRandomOpacity: function() {
     var opacity;
-    opacity = Math.random() * (1 - 0) + 0;
+    opacity = Particles.getRandom(0,1,true);
     opacity = parseFloat(opacity.toFixed(2));
     return opacity;
   },
@@ -54,15 +62,15 @@ var Particles = {
   getRandomLife: function() {
     var duration,middle,birth;
 
-    duration = (Particles.isMobile()) ? Math.floor(Particles.getRandom(1000, 2000)) : Math.floor(Particles.getRandom(0, 750)); //random "time"
+    duration = (Particles.isMobile()) ? Particles.getRandom(1000, 2000, false) : Particles.getRandom(0, 750, false); //random "time"
 
     if(Particles.isMobile()){
       duration += 60;
-      middle = Particles.getRandom(50, 80) + 60;
-      birth = Particles.getRandom(0, middle)+120;
+      middle = Particles.getRandom(50, 80, false) + 60;
+      birth = Particles.getRandom(0, middle, false)+120;
     } else {
-      middle = Particles.getRandom(50, 80);
-      birth = Particles.getRandom(0, middle / 2.2);
+      middle = Particles.getRandom(50, 80,false);
+      birth = Particles.getRandom(0, (middle / 2.2), false);
     }
 
     middle /= 100;
@@ -86,15 +94,16 @@ var Particles = {
   getEndLocation: function(init_x, init_y) {
     var radius, fpm, angle, end_x, end_y, dx, dy;
 
-    radius = 200;
+    // for 15% of the particles, make them have a larger radius option
+    radius = (Particles.getRandom(0,1,true) > 0.85) ? Particles.getRandom(700,1000,false) : Particles.getRandom(300,500,false);
 
-    angle = ((Math.round(Math.random() * 100) / 100) > 0.50) ? Particles.getRandom(0, 360) : (-1 * Particles.getRandom(0, 360)); //choose a random angle
+    angle = (Particles.getRandom(0,1,true) > 0.50) ? Particles.getRandom(0, 360, false) : (-1 * Particles.getRandom(0, 360,false)); //choose a random angle
     end_x = Math.ceil(init_x + radius * Math.cos(angle * Math.PI / 180));
     end_y = Math.ceil(init_y + radius * Math.sin(angle * Math.PI / 180));
 
     /* To make all of the particles move at their own speed */
-    end_x = (init_x > end_x) ? Particles.getRandom(end_x, init_x) : Particles.getRandom(init_x, (end_x + 10));
-    end_y = (init_y > end_y) ? Particles.getRandom(end_y, init_y) : Particles.getRandom(init_y, (end_y + 10));
+    end_x = (init_x > end_x) ? Particles.getRandom(end_x, init_x, true) : Particles.getRandom(init_x, end_x, true);
+    end_y = (init_y > end_y) ? Particles.getRandom(end_y, init_y, true) : Particles.getRandom(init_y, end_y, true);
 
     dx = (init_x - end_x) / Particles.FPM();
     dy = (init_y - end_y) / Particles.FPM();
@@ -103,8 +112,8 @@ var Particles = {
   },
   createScene: function(count) {
     for (var i = 0; i < count; i++) {
-      var init_x = Particles.getRandom(Particles.CANVAS_WIDTH(), 0);
-      var init_y = Particles.getRandom(Particles.CANVAS_HEIGHT(), 0);
+      var init_x = Particles.getRandom(Particles.CANVAS_WIDTH(),0,false);
+      var init_y = Particles.getRandom(Particles.CANVAS_HEIGHT(),0,false);
       var ends = Particles.getEndLocation(init_x, init_y);
       Particles.ParticlesArray[i] = {
         color: Particles.getRandomColor(),
@@ -125,20 +134,20 @@ var Particles = {
     if(Particles.sceneAge >= 220){
       function newRandom(oldIndex,newIndex){
         if(oldIndex === newIndex){
-          return newRandom(oldIndex,Particles.getRandom(0,6));
+          return newRandom(oldIndex,Particles.getRandom(0,6,false));
         } else {
           return newIndex;
         }
       }
-      Particles.colorFamilyIndex = newRandom(Particles.colorFamilyIndex,Particles.getRandom(0,6));
+      Particles.colorFamilyIndex = newRandom(Particles.colorFamilyIndex,Particles.getRandom(0,6,false));
       Particles.sceneAge = 0;
     }
 
 
     Particles.ParticlesArray.forEach(function(particle, index) {
       if (particle.life.age >= particle.life.duration * 2.5) {
-        var new_x = Particles.getRandom(Particles.CANVAS_WIDTH(), 0);
-        var new_y = Particles.getRandom(Particles.CANVAS_HEIGHT(), 0);
+        var new_x = Particles.getRandom(Particles.CANVAS_WIDTH(), 0,false);
+        var new_y = Particles.getRandom(Particles.CANVAS_HEIGHT(), 0,false);
         var ends  = Particles.getEndLocation(new_x, new_y);
 
         Particles.ParticlesArray[index] = {
@@ -157,7 +166,11 @@ var Particles = {
         particle.x = particle.x + particle.dx;
         particle.y = particle.y + particle.dy;
         if (particle.life.age <= particle.life.birth) {
-          particle.color = Particles.updateOpacity(particle.color, 0.03);
+          if(Particles.isMobile()){
+            particle.color = Particles.updateOpacity(particle.color, 0.03);
+          } else {
+            particle.color = Particles.updateOpacity(particle.color, 0.05);
+          }
         } else if (particle.life.age >= (particle.life.birth)) {
           particle.color = Particles.updateOpacity(particle.color, -0.005);
         }
